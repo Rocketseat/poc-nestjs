@@ -93,6 +93,13 @@ Você pode conferir que todos containers foram criados utilizando `docker ps` e 
 
 O Kafka está acessível na porta `9092` e o PostgreSQL na porta `5432`.
 
+Credenciais do PostgreSQL:
+```
+- USERNAME=docker
+- PASSWORD=docker
+- DATABASE=hidra
+```
+
 Agora com o projeto criado é mão na massa e daqui pra frente é com vocês! :)
 
 Lembre-se, o intuito é você ter a **experiência completa** de entender a documentação do Nest.js e demais ferramentas e como configurar tudo do zero, o seu feedback do quanto isso foi fácil ou difícil é super importante pra gente.
