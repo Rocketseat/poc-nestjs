@@ -4,19 +4,34 @@ Esse projeto tem como propósito realizar uma POC (prova de conceito) da ferrame
 
 O projeto aqui detalhado tem como propósito testar única e exclusivamente a ferramenta e **não a performance individual** ou do grupo que o realizar, ou seja, nossa análise não será feita com a entrega do código e sim com **os feedbacks das pessoas envolvidas** em sua criação, ou seja, é super importante que ao longo do processo você vá criando uma **opinião própria** e anote suas dificuldades e pontos onde achou que a ferramenta lhe atendeu bem.
 
+- [Projeto](#projeto)
+- [Ferramentas e conceitos](#ferramentas-e-conceitos)
+  - [GraphQL](#graphql)
+  - [Kafka](#kafka)
+  - [API Versioning](#api-versioning)
+  - [PostgreSQL](#postgresql)
+  - [Autenticação](#autenticação)
+- [Setup do projeto](#setup-do-projeto)
+- [Integração com Kafka](#integração-com-kafka)
+  - [Configurando producer](#configurando-producer)
+  - [Produzindo mensagens](#produzindo-mensagens)
+  - [Formato das mensagens](#formato-das-mensagens)
+  - [Exemplos de eventos](#exemplos-de-eventos)
+- [Boa sorte](#boa-sorte)
+
 ## Projeto
 
-O projeto a ser desenvolvido será um serviço responsável por armazenar dados de vendas, seus produtos e informações de possíveis reembolsos.
+O projeto receberá informações sobre vendas e reembolsos através de um sistema de mensageria assíncrona que detalharemos mais a frente, essas mensagens conterão dados da venda, produtos e cliente que deverão ser armazenados em um banco de dados.
 
 Além de se comunicar com serviços externos para obter informações das vendas, o serviço também fornecerá uma forma de consulta dos dados cadastrados através de requisições HTTP.
 
-O serviço deve permitir, através de HTTP, que o usuário autenticado cancele uma venda reembolsando o valor integral ao comprador.
+O serviço deve permitir, através de HTTP, que o usuário autenticado cancele uma venda alterando seu status para cancelado e criando um novo reembolso para aquela venda.
 
-Por último, a cada venda aprovada, o serviço deverá se comunicar com um terceiro serviço responsável pela emissão de notas fiscais dos pedidos enviando alguns dados da venda.
+Além de receber mensagens de serviços externos, o app deverá também se comunicar com outras aplicações externas (Ignite e Experts) quando novas compras ou reembolsos relacionados a esses produtos forem cadastrados para, então, liberar ou remover o acesso da pessoa nos produtos.
 
 Ah, o nome desse projeto vai ser `Hidra` :)
 
-## Ferramentas & conceitos
+## Ferramentas e conceitos
 
 O objetivo dessa POC é testar principalmente o Nest.js, mas com ele vamos aproveitar para testar algumas ferramentas e conceitos que temos interesse de adotar dentro das aplicações internas, que são:
 
@@ -46,7 +61,7 @@ Imagine que seu front-end precise da listagem dos usuários com o endereço, mas
 
 Nessa POC não faremos o API versioning ainda, mas é importante entender sua motivação, pois nos projetos reais provavelmente iremos utilizar esse conceito.
 
-O Nest.js está [próximo de liberar](https://github.com/nestjs/nest/pull/6349) uma integração completa com API versioning.
+O Nest.js está [próximo de liberar](https://github.com/nestjs/nest/pull/6349) uma forma de definirmos prefixos nas rotas dentro dos controllers facilitando o API versioning.
 
 ### PostgreSQL
 
@@ -56,3 +71,121 @@ Além disso, é importante que o projeto desenvolvido tenha **testes de integra�
 
 Para autenticação **não é necessário configurar uma tabela de usuários e todo processo de autenticação**, apenas crie uma verificação se existe um cabeçalho chamado "Authorization" e que dentro tenha algum token mesmo que aleatório.
 
+## Setup do projeto
+
+O primeiro passo é criar o projeto Nest dentro da pasta `packages` utilizando a CLI do Nest.js (é preciso instala-la de forma global). 
+
+Você pode acessar a pasta `packages` e executar:
+
+```sh
+nest new hidra
+```
+
+Agora, para executar o sistema de mensageria (Kafka) e o banco de dados PostgreSQL que serão usados pela aplicação utilize o Docker Compose (é necessário instalar o Docker e o Docker Compose em sua máquina):
+
+Na pasta raiz do projeto, execute:
+
+```sh
+docker compose up -d
+```
+
+Você pode conferir que todos containers foram criados utilizando `docker ps` e acessar os logs de um container com `docker logs {container_id}`.
+
+O Kafka está acessível na porta `9092` e o PostgreSQL na porta `5432`.
+
+Agora com o projeto criado é mão na massa e daqui pra frente é com vocês! :)
+
+Lembre-se, o intuito é você ter a **experiência completa** de entender a documentação do Nest.js e demais ferramentas e como configurar tudo do zero, o seu feedback do quanto isso foi fácil ou difícil é super importante pra gente.
+
+## Integração com Kafka
+
+Para conseguir testar que sua aplicação está ouvindo as mensagens do Kafka é importante que exista uma outra aplicação produzindo as mensagens.
+
+Dentro do Kafka temos 3 principais conceitos:
+
+- Topic: um canal por onde as mensagens são enviadas ou consumidas;
+- Producer: aplicação que produz as mensagens para o tópico;
+- Consumer: aplicação que consome as mensagens do tópico;
+
+A sua aplicação com Nest.js fará o papel de consumer e irá consumir mensagens do tópico `hidra` que será configurado de forma automática logo.
+
+Para produzir as mensagens criamos um projeto em Node.js extremamente simples que funciona como uma CLI e está dentro da pasta `packages/producer`.
+
+### Configurando producer
+
+Dentro da pasta do projeto `producer` vamos começar instalando as dependências do projeto com `yarn` e, logo após, você pode executar o comando `yarn link producer`. 
+
+Com isso você já deve conseguir executar o projeto de forma global no seu terminal:
+
+```sh
+producer --version
+```
+
+Esse comando deve retornar a versão atual do producer.
+
+Agora vamos executar o comando `producer setup` que vai criar os tópicos `hidra`, `ignite` e `experts` dentro do Kafka (esse comando pode ser executado mais de uma vez pois não cria o mesmo tópico duas vezes).
+
+### Produzindo mensagens
+
+Ainda no producer você pode produzir mensagens para o tópico do Kafka utilizando o comando `producer send` seguido do evento que quer disparar, por exemplo, `producer send purchase`.
+
+⚠ É importante salientar que as mensagens enviadas pro Kafka que não forem consumidas por nenhuma aplicação são armazenadas em um banco de dados e enviadas novamente no futuro, então é legal testar esses comandos somente quanto sua aplicação consumidora já estiver executando. ⚠
+
+| Event         | Action                             |
+| ------------- |-----------------------------------:|
+| purchase      | Send a kafka message of a purchase |
+| refund        | Send a kafka message of a refund   |
+
+#### Formato das mensagens
+
+Toda `purchase` contém dados como os seguintes:
+
+```json
+{
+  "id": "14245d40-8e83-4786-9e73-b52dba1f60e0",
+  "customer": {
+    "id": "4f1ba105-8455-4fe2-9ace-28aac3733797",
+    "name": "Mattie Kohler",
+    "email": "Donato.Stehr@yahoo.com",
+    "address": { 
+      "street": "Jonathan Plain", 
+      "city": "Cartwrightburgh", 
+      "state": "KS"
+    }
+  },
+  "product": { 
+    "id": "ignite", 
+    "amount": 1980, 
+    "type": "onetime"
+  },
+  "createdAt": "2021-03-22T17:21:06.246Z"
+}
+```
+
+Todo `refund` contém dados como os seguintes:
+
+```json
+{
+  "id": "19c6b0f7-4bb2-49ec-85bf-00ff185d7ed8",
+  "purchaseId": "14245d40-8e83-4786-9e73-b52dba1f60e0",
+  "createdAt": "2021-03-22T17:22:32.471Z"
+}
+```
+
+#### Exemplos de eventos
+
+```sh
+producer send purchase --product ignite
+producer send purchase --product experts
+producer send purchase --product ignite --purchase-id p-1 --customer-id c-1
+
+producer send refund --purchase-id p-1
+```
+
+## Boa sorte
+
+Como explicado no documento, a ideia desse projeto é testar AS FERRAMENTAS abordadas aqui e não sua capacidade em desenvolver utilizando-as.
+
+Por isso, sempre que tiver alguma dúvida sobre a ideia da POC e todo texto aqui colocado, chame a gente (Diego ou João)!
+
+É super importante que você desenvolva a aplicação sempre em conjunto para que todas pessoas tenham a experiência completa de trabalhar com as ferramentas propostas.
