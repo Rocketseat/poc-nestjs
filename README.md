@@ -143,6 +143,16 @@ Ainda no producer você pode produzir mensagens para o tópico do Kafka utilizan
 | purchase      | Send a kafka message of a purchase |
 | refund        | Send a kafka message of a refund   |
 
+#### Exemplos de eventos
+
+```sh
+producer send purchase --product ignite
+producer send purchase --product experts
+producer send purchase --product ignite --purchase-id p-1 --customer-id c-1
+
+producer send refund --purchase-id p-1
+```
+
 #### Formato das mensagens
 
 Toda `purchase` contém dados como os seguintes:
@@ -179,15 +189,7 @@ Todo `refund` contém dados como os seguintes:
 }
 ```
 
-#### Exemplos de eventos
 
-```sh
-producer send purchase --product ignite
-producer send purchase --product experts
-producer send purchase --product ignite --purchase-id p-1 --customer-id c-1
-
-producer send refund --purchase-id p-1
-```
 
 ## Boa sorte
 
