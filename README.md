@@ -212,13 +212,17 @@ Outra funcionalidade que a aplicação deve ter é de produzir mensagens no Kafk
 
 A funcionalidade de controlar o acesso do usuário não é responsabilidade sua, apenas se responsabilize por enviar as mensagens via Kafka.
 
-As mensagens devem ser enviadas aos tópicos ignite e experts, sendo o tópico ignite para mensagens de vendas e reembolsos relacionadas ao Ignite e experts para o Experts Club.
+As mensagens devem ser enviadas aos tópicos `ignite` e `experts`, sendo o tópico ignite para mensagens de vendas e reembolsos relacionadas ao Ignite e experts para o Experts Club.
 
 Para testar se as mensagens enviadas pela sua aplicação estão chegando corretamente você pode utilizar o projeto `consumer` criado na pasta `packages`.
 
 ### Configurando consumer
 
-Dentro do projeto consumer instale as dependências com `yarn` e execute o link com `yarn link` e agora você pode executar o comando para ouvir mensagens enviadas para qualquer tópico do Kafka:
+Dentro do projeto consumer instale as dependências com `yarn` e execute o link com `yarn link`.
+
+Agora utilize o comando `consumer setup` para criar os tópicos do Kafka que sua aplicação usará para enviar as mensagens.
+
+Agora você pode executar o comando para ouvir mensagens enviadas para qualquer tópico do Kafka:
 
 ```sh
 consumer listen ignite
