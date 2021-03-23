@@ -1,17 +1,15 @@
 {
-  "name": "producer",
+  "name": "consumer",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
   "bin": {
-    "producer": "index.js"
+    "consumer": "index.js"
   },
   "dependencies": {
     "chalk": "^4.1.0",
     "cli-table": "^0.3.6",
     "commander": "^7.2.0",
-    "faker": "^5.4.0",
-    "kafkajs": "^1.15.0",
-    "uuid": "^8.3.2"
+    "kafkajs": "^1.15.0"
   }
 }

@@ -10,7 +10,7 @@ const package = require('./package.json');
 
 program.version(package.version);
 
-const kafkaTopics = ['ignite', 'experts', 'hidra.purchase', 'hidra.refund'];
+const kafkaTopics = ['hidra.purchase', 'hidra.refund'];
 
 const availableEvents = new Set([
   'purchase',

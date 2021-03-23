@@ -17,6 +17,9 @@ O projeto aqui detalhado tem como propósito testar única e exclusivamente a fe
   - [Produzindo mensagens](#produzindo-mensagens)
   - [Formato das mensagens](#formato-das-mensagens)
   - [Exemplos de eventos](#exemplos-de-eventos)
+- [Servidor HTTP (GraphQL)](#servidor-http-(graphql))
+- [Enviando mensagens com Kafka](#enviando-mensagens-com-kafka)
+  - [Configurando consumer](#configurando-consumer)
 - [Boa sorte](#boa-sorte)
 
 ## Projeto
@@ -120,7 +123,7 @@ Para produzir as mensagens criamos um projeto em Node.js extremamente simples qu
 
 ### Configurando producer
 
-Dentro da pasta do projeto `producer` vamos começar instalando as dependências do projeto com `yarn` e, logo após, você pode executar o comando `yarn link producer`. 
+Dentro da pasta do projeto `producer` vamos começar instalando as dependências do projeto com `yarn` e, logo após, você pode executar o comando `yarn link`. 
 
 Com isso você já deve conseguir executar o projeto de forma global no seu terminal:
 
@@ -189,7 +192,45 @@ Todo `refund` contém dados como os seguintes:
 }
 ```
 
+## Servidor HTTP (GraphQL)
 
+Uma das funcionalidades importantes dessa aplicação é um servidor HTTP feito com GraphQL.
+
+Nesse servidor deve ser possível realizar 5 operações simples:
+
+- Listar todas vendas (com opção de trazer também dados dos clientes e seus endereços);
+- Buscar uma venda pelo ID (com opção de trazer também dados dos clientes e seus endereços);
+- Listar todos clientes (com opção de trazer também seus endereços);
+- Buscar um cliente pelo ID (com opção de trazer também seus endereços);
+- Cancelar uma compra, alterando seu status para "canceled";
+
+Todas operações de listagem devem ter opção de paginação com um padrão de 10 itens por página;
+
+## Enviando mensagens com Kafka
+
+Outra funcionalidade que a aplicação deve ter é de produzir mensagens no Kafka sempre que uma venda for compensada ou reembolsada liberando ou removendo acesso de um usuário a tal produto.
+
+A funcionalidade de controlar o acesso do usuário não é responsabilidade sua, apenas se responsabilize por enviar as mensagens via Kafka.
+
+As mensagens devem ser enviadas aos tópicos ignite e experts, sendo o tópico ignite para mensagens de vendas e reembolsos relacionadas ao Ignite e experts para o Experts Club.
+
+Para testar se as mensagens enviadas pela sua aplicação estão chegando corretamente você pode utilizar o projeto `consumer` criado na pasta `packages`.
+
+### Configurando consumer
+
+Dentro do projeto consumer instale as dependências com `yarn` e execute o link com `yarn link` e agora você pode executar o comando para ouvir mensagens enviadas para qualquer tópico do Kafka:
+
+```sh
+consumer listen ignite
+consumer listen experts
+```
+
+Dica: Você pode usar o consumer inclusive pra ouvir eventos enviados pelo projeto producer caso sua aplicação não esteja recebendo essas mensagens assim validando se o problema está no producer ou na sua aplicação:
+
+```sh
+consumer listen hidra.purchase
+consumer listen hidra.refund
+```
 
 ## Boa sorte
 
